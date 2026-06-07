@@ -117,16 +117,16 @@ class Orchestrator:
     async def boot(self) -> None:
         logger.info("=" * 60)
         logger.info("Options Monitoring & Macro Arbitrage Agent — BOOTING")
-        logger.info(f"  Batch mode:    {settings.batch_size} tickers/batch")
-        logger.info(f"  Batch interval: {settings.batch_interval_seconds}s")
-        logger.info(f"  Poll interval: {settings.poll_interval_seconds}s")
-        logger.info(f"  Dry-run:      {settings.dry_run}")
-        logger.info(f"  Mock data:    {settings.use_mock_data}")
+        logger.info(f"  Batch mode:    {self.settings.batch_size} tickers/batch")
+        logger.info(f"  Batch interval: {self.settings.batch_interval_seconds}s")
+        logger.info(f"  Poll interval: {self.settings.poll_interval_seconds}s")
+        logger.info(f"  Dry-run:      {self.settings.dry_run}")
+        logger.info(f"  Mock data:    {self.settings.use_mock_data}")
 
         self._all_tickers = self.settings.get_enabled_tickers()
         self._batches = self.settings.get_batches()
         logger.info(f"  Tickers:      {self._all_tickers}")
-        logger.info(f"  Batches:      {len(self._batches)} × {settings.batch_size} = {len(self._all_tickers)} total")
+        logger.info(f"  Batches:      {len(self._batches)} × {self.settings.batch_size} = {len(self._all_tickers)} total")
         logger.info("=" * 60)
 
         self._market_provider = build_market_provider(self.settings)
