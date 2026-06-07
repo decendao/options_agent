@@ -1,0 +1,104 @@
+{
+  "family": "options-agent",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/optionsAgentTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "options-agent",
+      "image": "YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/options-agent:latest",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/options-agent",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "secrets": [
+        {
+          "name": "ALPACA_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_ACCOUNT_ID:secret:options-agent:alpaca_key::"
+        },
+        {
+          "name": "ALPACA_API_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_ACCOUNT_ID:secret:options-agent:alpaca_secret::"
+        },
+        {
+          "name": "POLYGON_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:YOUR_ACCOUNT_ID:secret:options-agent:polygon_key::"
+        }
+      ],
+      "environment": [
+        {
+          "name": "DRY_RUN",
+          "value": "false"
+        },
+        {
+          "name": "USE_MOCK_DATA",
+          "value": "false"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "INFO"
+        },
+        {
+          "name": "POLL_INTERVAL_SECONDS",
+          "value": "30"
+        },
+        {
+          "name": "WATCH_TICKERS",
+          "value": "SPY,QQQ"
+        },
+        {
+          "name": "RISK_FREE_RATE",
+          "value": "0.0525"
+        },
+        {
+          "name": "OPTION_EXPIRY_LOOKAHEAD_DAYS",
+          "value": "45"
+        },
+        {
+          "name": "OPTION_MONEYNESS_RANGE_PCT",
+          "value": "0.15"
+        },
+        {
+          "name": "IV_HISTORY_DAYS",
+          "value": "252"
+        },
+        {
+          "name": "RISK_THRESHOLDS__GAMMA_WALL_PROXIMITY_PCT",
+          "value": "0.02"
+        },
+        {
+          "name": "RISK_THRESHOLDS__IV_CRUSH_IV_RANK_THRESHOLD",
+          "value": "0.70"
+        },
+        {
+          "name": "RISK_THRESHOLDS__IV_CRUSH_HOURS_BEFORE_EVENT",
+          "value": "48"
+        },
+        {
+          "name": "RISK_THRESHOLDS__EV_MIN_SPREAD_PCT",
+          "value": "0.05"
+        },
+        {
+          "name": "RISK_THRESHOLDS__ZERO_GAMMA_BREACH_BUFFER_PCT",
+          "value": "0.005"
+        },
+        {
+          "name": "RISK_THRESHOLDS__MAX_PAIN_DEVIATION_ALERT_PCT",
+          "value": "0.05"
+        },
+        {
+          "name": "RISK_THRESHOLDS__MAX_CONSECUTIVE_ERRORS",
+          "value": "5"
+        }
+      ]
+    }
+  ]
+}
