@@ -177,6 +177,8 @@ class Orchestrator:
             cycle_id = f"ORCH_{self._cycle_count:06d}"
             agent_a_ok = agent_b_ok = agent_c_ok = False
             alerts_this_cycle = errors_this_cycle = 0
+            # Initialize to None so cache assignment never hits UnboundLocalError
+            a_output = b_output = c_output = None
 
             try:
                 # ── Batched data collection (Agent A) ──────────────────

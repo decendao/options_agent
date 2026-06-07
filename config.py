@@ -265,11 +265,16 @@ class Settings(BaseSettings):
 
                 # Sort: high → medium → low
                 priority_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
-                def sort_key(ticker: str) -> tuple[int, int]:
-                    entry = next((e for e in watchlist.watchlist if e.ticker.upper() == ticker), None)
-                    priority = (entry.priority.upper() if entry else "MEDIUM")
+
+                def sort_key(ticker: str) -> tuple[int, str]:
+                    entry = next(
+                        (e for e in watchlist.watchlist if e.ticker.upper() == ticker),
+                        None,
+                    )
+                    priority = entry.priority.upper() if entry else "MEDIUM"
                     return (priority_order.get(priority, 1), ticker)
-                    enabled.sort(key=sort_key)
+
+                enabled.sort(key=sort_key)
                 return enabled
         except Exception:
             pass
