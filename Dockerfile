@@ -1,16 +1,1 @@
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Install dependencies first (layer caching)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy source code
-COPY . .
-
-# Run as non-root
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
-
-CMD ["python", "main.py"]
+RlJPTSBweXRob246My4xMS1zbGltCgpXT1JLRElSIC9hcHAKCiMgSW5zdGFsbCBkZXBlbmRlbmNpZXMgZmlyc3QgKGxheWVyIGNhY2hpbmcpCkNPUFkgcmVxdWlyZW1lbnRzLnR4dCAuClJVTiBwaXAgaW5zdGFsbCAtLW5vLWNhY2hlLWRpciAtciByZXF1aXJlbWVudHMudHh0CgojIENvcHkgc291cmNlIGNvZGUKQ09QWSAuIC4KCiMgSW5zdGFsbCBhcyBlZGl0YWJsZSBwYWNrYWdlIHNvICdmcm9tIG9wdGlvbnNfYWdlbnQuKicgaW1wb3J0cyB3b3JrClJVTiBwaXAgaW5zdGFsbCAtLW5vLWNhY2hlLWRpciAtZSAuCgojIFJ1biBhcyBub24tcm9vdApSVU4gdXNlcmFkZCAtbSBhcHB1c2VyICYmIGNob3duIC1SIGFwcHVzZXI6YXBwdXNlciAvYXBwClVTRVIgYXBwdXNlcgoKQ01EIFsicHl0aG9uIiwgIm1haW4ucHkiXQo=
