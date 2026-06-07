@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "options-agent"
+version = "0.1.0"
+description = "Async Stateful Options Monitoring & Macro Arbitrage Agent"
+requires-python = ">=3.11"
+dependencies = [
+    "aiohttp>=3.9.5,<4.0",
+    "asyncio-throttle>=1.0.2",
+    "pydantic>=2.7.0,<3.0",
+    "pydantic-settings>=2.3.0,<3.0",
+    "numpy>=1.26.4,<2.0",
+    "scipy>=1.13.0,<2.0",
+    "loguru>=0.7.2,<1.0",
+    "python-dotenv>=1.0.1",
+    "fastapi>=0.111.0,<1.0",
+    "uvicorn[standard]>=0.29.0,<1.0",
+]
+
+[tool.setuptools]
+package-dir = {"options_agent" = "."}
+packages = [
+    "options_agent",
+    "options_agent.agents",
+    "options_agent.core",
+    "options_agent.data",
+    "options_agent.harness",
+    "options_agent.webhooks",
+]
