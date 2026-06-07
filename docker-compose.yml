@@ -1,0 +1,52 @@
+# docker-compose.yml — Local development & testing
+# Usage: docker compose up
+#
+# For local testing with mock data (no API keys needed):
+#   docker compose up
+#
+# For local testing with real APIs:
+#   cp .env.example .env
+#   # fill in ALPACA_API_KEY, ALPACA_API_SECRET, POLYGON_API_KEY
+#   docker compose --env-file .env up
+#
+# For production deployment on AWS ECS Fargate, see DEPLOY_AWS.md
+
+services:
+  options-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: options-agent
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Override these if not using env_file
+      DRY_RUN: ${DRY_RUN:-true}
+      USE_MOCK_DATA: ${USE_MOCK_DATA:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-30}
+      WATCH_TICKERS: ${WATCH_TICKERS:-SPY,QQQ}
+      RISK_FREE_RATE: ${RISK_FREE_RATE:-0.0525}
+      OPTION_EXPIRY_LOOKAHEAD_DAYS: ${OPTION_EXPIRY_LOOKAHEAD_DAYS:-45}
+      OPTION_MONEYNESS_RANGE_PCT: ${OPTION_MONEYNESS_RANGE_PCT:-0.15}
+      IV_HISTORY_DAYS: ${IV_HISTORY_DAYS:-252}
+      RISK_THRESHOLDS__GAMMA_WALL_PROXIMITY_PCT: ${RISK_THRESHOLDS__GAMMA_WALL_PROXIMITY_PCT:-0.02}
+      RISK_THRESHOLDS__IV_CRUSH_IV_RANK_THRESHOLD: ${RISK_THRESHOLDS__IV_CRUSH_IV_RANK_THRESHOLD:-0.70}
+      RISK_THRESHOLDS__IV_CRUSH_HOURS_BEFORE_EVENT: ${RISK_THRESHOLDS__IV_CRUSH_HOURS_BEFORE_EVENT:-48}
+      RISK_THRESHOLDS__EV_MIN_SPREAD_PCT: ${RISK_THRESHOLDS__EV_MIN_SPREAD_PCT:-0.05}
+      RISK_THRESHOLDS__ZERO_GAMMA_BREACH_BUFFER_PCT: ${RISK_THRESHOLDS__ZERO_GAMMA_BREACH_BUFFER_PCT:-0.005}
+      RISK_THRESHOLDS__MAX_PAIN_DEVIATION_ALERT_PCT: ${RISK_THRESHOLDS__MAX_PAIN_DEVIATION_ALERT_PCT:-0.05}
+      RISK_THRESHOLDS__MAX_CONSECUTIVE_ERRORS: ${RISK_THRESHOLDS__MAX_CONSECUTIVE_ERRORS:-5}
+      # AWS Secrets Manager (production only)
+      # AWS_SECRETS_MANAGER_SECRET_ID: ${AWS_SECRETS_MANAGER_SECRET_ID:-}
+    volumes:
+      # Persist logs locally (optional)
+      - ./logs:/app/logs:rw
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

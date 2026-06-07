@@ -1,0 +1,149 @@
+# ============================================================
+# Stock Pool / Watchlist — Options Agent
+# ============================================================
+#
+# 在这里定义你的股票池。
+# Agent 会轮询所有 enabled=true 的标的。
+#
+# Fields:
+#   ticker: 股票代码（如 SPY、QQQ、AAPL）
+#   enabled: 是否启用监控
+#   category: 归类（可选，方便分组管理）
+#   priority: 优先级 high/medium/low，影响批次排序
+#
+# Batch Strategy:
+#   Alpaca Free Tier: 15 req/s 总限制
+#   推荐配置（5s 轮询，20只股票）:
+#     - 每批 5 只股票，4 批
+#     - 批次间隔 1.25s → 5只 × 2次(spot+options) = 10 req
+#     - 每批耗时 ≈ 10 req / 15 req/s ≈ 0.67s，留足余量
+#
+# 注意：这里只定义标的，数据源（Alpaca/Polygon）配置在 .env 中
+
+watchlist:
+  - ticker: SPY
+    enabled: true
+    category: broad_market
+    priority: high
+    description: S&P 500 ETF — 主要大盘基准
+
+  - ticker: QQQ
+    enabled: true
+    category: broad_market
+    priority: high
+    description: Nasdaq 100 ETF — 科技股基准
+
+  - ticker: IWM
+    enabled: true
+    category: broad_market
+    priority: medium
+    description: Russell 2000 ETF — 小盘股基准
+
+  # ── 大型科技股 ──────────────────────────────────────────────
+  - ticker: AAPL
+    enabled: true
+    category: mega_tech
+    priority: high
+    description: Apple
+
+  - ticker: MSFT
+    enabled: true
+    category: mega_tech
+    priority: high
+    description: Microsoft
+
+  - ticker: NVDA
+    enabled: true
+    category: mega_tech
+    priority: high
+    description: NVIDIA — 高IV期权标的
+
+  - ticker: GOOGL
+    enabled: true
+    category: mega_tech
+    priority: medium
+    description: Alphabet
+
+  - ticker: AMZN
+    enabled: true
+    category: mega_tech
+    priority: medium
+    description: Amazon
+
+  - ticker: META
+    enabled: true
+    category: mega_tech
+    priority: medium
+    description: Meta
+
+  - ticker: TSLA
+    enabled: true
+    category: mega_tech
+    priority: high
+    description: Tesla — 极高IV，高Gamma暴露
+
+  # ── 金融 ─────────────────────────────────────────────────
+  - ticker: JPM
+    enabled: true
+    category: financial
+    priority: medium
+    description: JPMorgan Chase
+
+  - ticker: GS
+    enabled: true
+    category: financial
+    priority: medium
+    description: Goldman Sachs
+
+  - ticker: BAC
+    enabled: false
+    category: financial
+    priority: low
+    description: Bank of America
+
+  # ── 其他高IV标的 ───────────────────────────────────────────
+  - ticker: AMD
+    enabled: true
+    category: semi
+    priority: medium
+    description: AMD — 芯片股，高IV
+
+  - ticker: NFLX
+    enabled: true
+    category: growth
+    priority: medium
+    description: Netflix
+
+  - ticker: SQ
+    enabled: false
+    category: fintech
+    priority: low
+    description: Block/Square
+
+  # ── VIX 相关 ─────────────────────────────────────────────
+  - ticker: SPY
+    enabled: false
+    category: volatility
+    priority: low
+    description: "[已覆盖] SPY"
+
+  # ── 宏观事件 ─────────────────────────────────────────────
+  # FOMC、CPI、非农等宏观事件前后，这些标的的IV会飙升
+  # 可以通过调整 POLL_INTERVAL_SECONDS 来临时提高频率
+
+# ============================================================
+# Batch Configuration
+# ============================================================
+# Alpaca Free Tier: 15 req/s
+# 分批策略：在 .env 中通过 BATCH_SIZE 配置
+
+# Batch scheduling (managed by config.py):
+#   每批完成后等待 BATCH_INTERVAL_SECONDS 再发下一批
+#   批次间隔 = BATCH_INTERVAL_SECONDS
+#
+# 示例（5s轮询，20只股票，每批5只）:
+#   批次1: t=0s    → 5只 → 等待1.25s
+#   批次2: t=1.25s → 5只 → 等待1.25s
+#   批次3: t=2.5s  → 5只 → 等待1.25s
+#   批次4: t=3.75s → 5只 → 等待1.25s
+#   完成:  t=5s     → 一轮结束，立即开始下一轮
