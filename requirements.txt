@@ -1,0 +1,26 @@
+# ── Core async framework ──────────────────────────────────────────────
+aiohttp>=3.9.5,<4.0
+asyncio-throttle>=1.0.2
+
+# ── Data validation & settings ───────────────────────────────────────
+pydantic>=2.7.0,<3.0
+pydantic-settings>=2.3.0,<3.0
+
+# ── Quantitative / numerical ─────────────────────────────────────────
+numpy>=1.26.4,<2.0
+scipy>=1.13.0,<2.0
+
+# ── Logging ──────────────────────────────────────────────────────────
+loguru>=0.7.2,<1.0
+
+# ── CLI / utilities ──────────────────────────────────────────────────
+python-dotenv>=1.0.1     # .env file loading
+
+# ── Optional: production monitoring ─────────────────────────────────
+# Uncomment to enable Prometheus metrics exporting
+# prometheus-client>=0.20.0
+
+# ── Development / testing ────────────────────────────────────────────
+# pytest>=8.2.0
+# pytest-asyncio>=0.23.0
+# pytest-mock>=3.14.0
