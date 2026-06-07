@@ -9,6 +9,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY . .
 
+# Install package so 'from options_agent.*' imports work
+RUN pip install --no-cache-dir -e .
+
 # Run as non-root
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
