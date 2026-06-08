@@ -234,6 +234,27 @@ class MockMarketDataProvider(BaseMarketDataProvider):
             data_quality=DataQuality.GOOD,
         )
 
+    async def fetch_spot_quotes_batch(
+        self,
+        tickers: list[str],
+        batch_interval: float = 0.0,
+    ) -> dict[str, SpotQuote]:
+        """Batch spot fetch — returns all quotes immediately (no rate limiting in mock)."""
+        return {t: await self.fetch_spot_quote(t) for t in tickers}
+
+    async def fetch_options_chains_batch(
+        self,
+        tickers: list[str],
+        moneyness_range_pct: float = 0.15,
+        batch_interval: float = 0.0,
+    ) -> dict[str, list[OptionsChain]]:
+        """Batch options chain fetch — no rate limiting in mock mode."""
+        result: dict[str, list[OptionsChain]] = {}
+        for ticker in tickers:
+            chains = await self.fetch_options_chain(ticker, moneyness_range_pct=moneyness_range_pct)
+            result[ticker] = chains
+        return result
+
     async def health_check(self) -> bool:
         return True
 

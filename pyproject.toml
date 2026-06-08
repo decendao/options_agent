@@ -1,11 +1,46 @@
 [project]
 name = "options_agent"
-version = "0.1.0"
+version = "0.2.0"
+requires-python = ">=3.11"
+dependencies = [
+    "aiohttp>=3.9.5,<4.0",
+    "fastapi>=0.115.0,<1.0",
+    "uvicorn[standard]>=0.30.0,<1.0",
+    "pydantic>=2.7.0,<3.0",
+    "pydantic-settings>=2.3.0,<3.0",
+    "numpy>=1.26.4,<2.0",
+    "scipy>=1.13.0,<2.0",
+    "python-dotenv>=1.0.1",
+    "pyyaml>=6.0.1",
+    "loguru>=0.7.2,<1.0",
+]
+
+[project.scripts]
+options-agent = "options_agent.main:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["options_agent"]
+packages = [
+    "options_agent",
+    "options_agent.agents",
+    "options_agent.core",
+    "options_agent.data",
+    "options_agent.harness",
+    "options_agent.webhooks",
+]
 package-dir = {"options_agent" = "."}
+
+[tool.setuptools.package-data]
+"options_agent.data" = ["*.yaml"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*"]

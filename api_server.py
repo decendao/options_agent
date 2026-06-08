@@ -557,6 +557,34 @@ def create_app(registry: APIRegistry) -> FastAPI:
     async def alerts():
         return r.get_alerts()
 
+    # ── Config ───────────────────────────────────────────────
+    @app.get("/config", tags=["system"])
+    async def config_view():
+        """Return current runtime configuration (redacts secrets)."""
+        if not r._registered or not hasattr(r, "_orchestrator"):
+            raise HTTPException(status_code=503, detail="Orchestrator not registered")
+        settings = r._orchestrator.settings
+        return {
+            "poll_interval_seconds": settings.poll_interval_seconds,
+            "batch_size": settings.batch_size,
+            "batch_interval_seconds": settings.batch_interval_seconds,
+            "tickers": settings.get_enabled_tickers(),
+            "dry_run": settings.dry_run,
+            "use_mock_data": settings.use_mock_data,
+            "log_level": settings.log_level,
+            "risk_thresholds": settings.risk_thresholds.model_dump(),
+            "option_expiry_lookahead_days": settings.option_expiry_lookahead_days,
+            "option_moneyness_range_pct": settings.option_moneyness_range_pct,
+            "risk_free_rate": settings.risk_free_rate,
+            "spot_provider": settings.spot_data_provider.name,
+            "prediction_markets": [p.name for p in settings.prediction_markets],
+            "catalyst_calendar": [
+                {"ticker": c.ticker, "event_type": c.event_type,
+                 "event_time_utc": c.event_time_utc, "description": c.description}
+                for c in settings.catalyst_calendar
+            ],
+        }
+
     # ── WebSocket ─────────────────────────────────────────────────────────
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):

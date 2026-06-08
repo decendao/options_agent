@@ -121,11 +121,11 @@ watchlist:
     description: Block/Square
 
   # ── VIX 相关 ─────────────────────────────────────────────
-  - ticker: SPY
+  - ticker: VIX
     enabled: false
     category: volatility
     priority: low
-    description: "[已覆盖] SPY"
+    description: CBOE Volatility Index (no options chain; macro reference only)
 
   # ── 宏观事件 ─────────────────────────────────────────────
   # FOMC、CPI、非农等宏观事件前后，这些标的的IV会飙升

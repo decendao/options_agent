@@ -153,7 +153,7 @@ class PolygonProvider(BaseMarketDataProvider):
                 if not (S * (1 - moneyness_range_pct) <= strike <= S * (1 + moneyness_range_pct)):
                     continue
 
-            iv_raw = snap.get("implied_volatility") or greeks.get("vega") and None
+            iv_raw = snap.get("implied_volatility")
             try:
                 iv = float(iv_raw) if iv_raw is not None else None
             except (TypeError, ValueError):

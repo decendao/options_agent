@@ -57,7 +57,7 @@ class AgentB:
         self.settings        = settings
         self.input_queue     = input_queue
         self.output_queue    = output_queue
-        self.iv_history_store = iv_history_store or {t: [] for t in settings.watch_tickers}
+        self.iv_history_store = iv_history_store or {t: [] for t in settings.get_enabled_tickers()}
 
     # ------------------------------------------------------------------
     # Main cycle — await on the A→B queue
