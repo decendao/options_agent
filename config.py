@@ -81,6 +81,18 @@ class WebhookConfig(BaseModel):
     timeout_seconds: float = 5.0
 
 
+class UnusualWhalesConfig(BaseModel):
+    """Unusual Whales real-time options flow feed configuration."""
+    api_token: str = ""
+    ws_url: str = "wss://api.unusualwhales.com/socket/option-activity"
+    rest_base_url: str = "https://api.unusualwhales.com"
+    min_premium_usd: float = Field(100_000.0)   # $100k filter threshold
+    reconnect_delay_seconds: float = 5.0
+    max_reconnect_attempts: int = 0             # 0 = unlimited
+    timeout_seconds: float = 10.0
+    use_mock: bool = False                      # force mock even with token present
+
+
 class CatalystEvent(BaseModel):
     ticker: str
     event_type: str
@@ -200,6 +212,15 @@ class Settings(BaseSettings):
 
     # ── Risk thresholds ────────────────────────────────────────────
     risk_thresholds: RiskThresholds = Field(default_factory=RiskThresholds)
+
+    # ── Unusual Whales (Scout Agent) ───────────────────────────────
+    unusual_whales: UnusualWhalesConfig = Field(
+        default_factory=lambda: UnusualWhalesConfig(
+            api_token=os.getenv("UNUSUAL_WHALES_API_TOKEN", ""),
+            min_premium_usd=float(os.getenv("UNUSUAL_WHALES_MIN_PREMIUM_USD", "100000")),
+            use_mock=os.getenv("UNUSUAL_WHALES_USE_MOCK", "").lower() in ("1", "true", "yes"),
+        )
+    )
 
     # ── Alert webhooks ────────────────────────────────────────────
     alert_webhook: WebhookConfig = Field(

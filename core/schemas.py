@@ -43,6 +43,12 @@ class DataQuality(str, Enum):
     INVALID = "INVALID"   # failed schema validation
 
 
+class FlowSentiment(str, Enum):
+    BULLISH = "bullish"
+    BEARISH = "bearish"
+    NEUTRAL = "neutral"
+
+
 # ---------------------------------------------------------------------------
 # Layer 0 — Raw Market Data
 # ---------------------------------------------------------------------------
@@ -156,6 +162,52 @@ class CatalystSignal(BaseModel):
     description: str = ""
     hours_until_event: float = 0.0
     is_imminent: bool = False  # True if within iv_crush_hours_before_event
+
+
+# ---------------------------------------------------------------------------
+# Layer 1b — Unusual Options Flow (output of Scout Agent)
+# ---------------------------------------------------------------------------
+
+class UnusualFlowSignal(BaseModel):
+    """Single unusual options flow event from Unusual Whales WebSocket."""
+    model_config = ConfigDict(frozen=True)
+
+    signal_id: str
+    ticker: str
+    expiration: date
+    strike: float = Field(gt=0)
+    option_type: OptionType
+    premium_usd: float = Field(ge=0)        # total premium paid (price × contracts × 100)
+    volume: int = Field(ge=0)
+    open_interest: int = Field(ge=0)
+    spot_price_at_trade: float = Field(gt=0)
+    implied_volatility: Optional[float] = None
+    delta: Optional[float] = None
+    sentiment: FlowSentiment = FlowSentiment.NEUTRAL
+    is_sweep: bool = False                  # multi-exchange sweep order
+    is_block: bool = False                  # large block trade
+    exchange: str = ""
+    timestamp_utc: datetime
+    source: str = "unusual_whales"
+
+    @property
+    def moneyness_pct(self) -> float:
+        return (self.strike - self.spot_price_at_trade) / self.spot_price_at_trade
+
+    @property
+    def days_to_expiry(self) -> int:
+        from datetime import datetime as _dt
+        return max((self.expiration - _dt.utcnow().date()).days, 0)
+
+
+class ScoutAgentStatus(BaseModel):
+    """Live status of the Scout Agent — exposed via /scout API endpoint."""
+    is_connected: bool = False
+    last_signal_at: Optional[datetime] = None
+    signals_today: int = 0
+    total_signals: int = 0
+    reconnect_count: int = 0
+    last_error: str = ""
 
 
 # ---------------------------------------------------------------------------

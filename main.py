@@ -93,6 +93,8 @@ class Orchestrator:
         self.settings = settings
         self.ab_queue: asyncio.Queue = asyncio.Queue(maxsize=10)
         self.bc_queue: asyncio.Queue = asyncio.Queue(maxsize=10)
+        # Scout Agent signal bus — consumed by future Analytica Agent
+        self.scout_queue: asyncio.Queue = asyncio.Queue(maxsize=200)
         self._shutdown = False
         self._cycle_count = 0
         self._consecutive_errors = 0
@@ -103,6 +105,7 @@ class Orchestrator:
         self._agent_a = None
         self._agent_b = None
         self._agent_c = None
+        self._scout_agent = None
         self._api_registry = api_registry
 
         # Per-cycle output cache for API exposure
@@ -164,6 +167,14 @@ class Orchestrator:
             dispatcher=self._dispatcher,
             input_queue=self.bc_queue,
         )
+
+        from options_agent.agents.scout_agent import ScoutAgent
+        self._scout_agent = ScoutAgent(
+            settings=self.settings,
+            scout_queue=self.scout_queue,
+            api_registry=self._api_registry,
+        )
+
         logger.info("All agents initialized. Starting main loop.")
 
         # Register with API registry
@@ -273,6 +284,8 @@ class Orchestrator:
     async def shutdown(self) -> None:
         logger.info("[Orchestrator] Shutting down gracefully...")
         self._shutdown = True
+        if self._scout_agent:
+            await self._scout_agent.shutdown()
         if self._market_provider:
             await self._market_provider.close()
         if self._prediction_aggregator:
@@ -329,8 +342,15 @@ async def async_main(args: argparse.Namespace) -> None:
         api_task = asyncio.create_task(_run_api_server(api_registry, "0.0.0.0", api_port))
         logger.info(f"[API] REST/WS server starting on port {api_port}...")
 
-        # Run orchestrator and API server concurrently
-        await asyncio.gather(orchestrator.run(), api_task)
+        # Scout Agent runs as an independent task alongside the main pipeline
+        scout_task = asyncio.create_task(
+            orchestrator._scout_agent.run(),
+            name="scout_agent",
+        )
+        logger.info("[Scout] Scout Agent task started (independent WebSocket listener)")
+
+        # Run orchestrator, API server, and Scout Agent concurrently
+        await asyncio.gather(orchestrator.run(), api_task, scout_task)
 
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt")

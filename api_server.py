@@ -51,8 +51,10 @@ from options_agent.core.api_models import (
     PredictionMarketContractAPI,
     RiskAlertAPI,
     RiskMatrixAPI,
+    ScoutStatusAPI,
     SpotQuoteAPI,
     SystemHeartbeatAPI,
+    UnusualFlowSignalAPI,
     WSSpotUpdate,
     WSHeartbeat,
     WSAlertFired,
@@ -63,6 +65,7 @@ from options_agent.core.schemas import (
     AgentCOutput,
     DataQuality as _DQ,
     EVDiscrepancy,
+    FlowSentiment,
     GammaProfile,
     GammaRegime,
     IVAnalysis,
@@ -72,8 +75,10 @@ from options_agent.core.schemas import (
     PredictionMarketContract,
     RiskAlert,
     RiskLevel,
+    ScoutAgentStatus,
     SpotQuote,
     SystemHeartbeat,
+    UnusualFlowSignal,
 )
 from options_agent.harness.logger import get_logger
 
@@ -153,6 +158,10 @@ class APIRegistry:
         # Recent alerts (keep last 50 across cycles)
         self._recent_alerts: list[RiskAlert] = []
         self._start_time: Optional[datetime] = None
+
+        # Scout Agent state
+        self._flow_signals: list[UnusualFlowSignal] = []   # last 100 qualifying signals
+        self._scout_status: ScoutAgentStatus = ScoutAgentStatus()
 
         # WebSocket manager
         self._ws_manager = WSConnectionManager()
@@ -473,6 +482,57 @@ class APIRegistry:
     def get_alerts(self) -> list[RiskAlertAPI]:
         return [self._to_risk_alert_api(a_) for a_ in self._recent_alerts[-50:]]
 
+    # ── Scout Agent ───────────────────────────────────────────────────────
+
+    def register_flow_signal(self, signal: UnusualFlowSignal) -> None:
+        """Called by ScoutAgent on each qualifying flow signal."""
+        self._flow_signals.append(signal)
+        if len(self._flow_signals) > 100:
+            self._flow_signals = self._flow_signals[-100:]
+
+    def register_scout_status(self, status: ScoutAgentStatus) -> None:
+        self._scout_status = status
+
+    def get_flow_signals(self, ticker: Optional[str] = None, limit: int = 50) -> list[UnusualFlowSignalAPI]:
+        signals = self._flow_signals
+        if ticker:
+            signals = [s for s in signals if s.ticker == ticker.upper()]
+        return [self._to_flow_signal_api(s) for s in signals[-limit:]]
+
+    def get_scout_status(self) -> ScoutStatusAPI:
+        s = self._scout_status
+        return ScoutStatusAPI(
+            is_connected=s.is_connected,
+            last_signal_at=s.last_signal_at,
+            signals_today=s.signals_today,
+            total_signals=s.total_signals,
+            reconnect_count=s.reconnect_count,
+            last_error=s.last_error,
+        )
+
+    @staticmethod
+    def _to_flow_signal_api(s: UnusualFlowSignal) -> UnusualFlowSignalAPI:
+        from options_agent.core.api_models import FlowSentiment as _FS
+        return UnusualFlowSignalAPI(
+            signal_id=s.signal_id,
+            ticker=s.ticker,
+            expiration=s.expiration,
+            strike=s.strike,
+            option_type=OptionType(s.option_type.value),
+            premium_usd=s.premium_usd,
+            volume=s.volume,
+            open_interest=s.open_interest,
+            spot_price_at_trade=s.spot_price_at_trade,
+            implied_volatility=s.implied_volatility,
+            delta=s.delta,
+            sentiment=_FS(s.sentiment.value),
+            is_sweep=s.is_sweep,
+            is_block=s.is_block,
+            exchange=s.exchange,
+            timestamp_utc=s.timestamp_utc,
+            source=s.source,
+        )
+
 
 # ---------------------------------------------------------------------------
 # FastAPI app factory
@@ -556,6 +616,19 @@ def create_app(registry: APIRegistry) -> FastAPI:
     @app.get("/alerts", response_model=list[RiskAlertAPI], tags=["alerts"])
     async def alerts():
         return r.get_alerts()
+
+    # ── Scout / Unusual Flow ─────────────────────────────────────────────
+    @app.get("/scout", response_model=ScoutStatusAPI, tags=["scout"])
+    async def scout_status():
+        return r.get_scout_status()
+
+    @app.get("/flow", response_model=list[UnusualFlowSignalAPI], tags=["scout"])
+    async def flow_all(limit: int = 50):
+        return r.get_flow_signals(limit=min(limit, 100))
+
+    @app.get("/flow/{ticker}", response_model=list[UnusualFlowSignalAPI], tags=["scout"])
+    async def flow_ticker(ticker: str, limit: int = 50):
+        return r.get_flow_signals(ticker=ticker.upper(), limit=min(limit, 100))
 
     # ── WebSocket ─────────────────────────────────────────────────────────
     @app.websocket("/ws")

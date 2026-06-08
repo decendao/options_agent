@@ -55,6 +55,12 @@ class AgentStatus(str, Enum):
     STANDBY = "STANDBY"
 
 
+class FlowSentiment(str, Enum):
+    BULLISH = "bullish"
+    BEARISH = "bearish"
+    NEUTRAL = "neutral"
+
+
 # ---------------------------------------------------------------------------
 # Layer 0 — Market Data (API shape)
 # ---------------------------------------------------------------------------
@@ -250,6 +256,45 @@ class SystemHeartbeatAPI(BaseModel):
     alerts_this_cycle: int
     errors_this_cycle: int
     consecutive_error_count: int
+
+    model_config = {"from_attributes": True}
+
+
+# ---------------------------------------------------------------------------
+# Scout Agent — Unusual Flow & Status
+# ---------------------------------------------------------------------------
+
+class UnusualFlowSignalAPI(BaseModel):
+    """Single unusual options flow event from the Scout Agent."""
+    signal_id: str
+    ticker: str
+    expiration: date
+    strike: float
+    option_type: OptionType
+    premium_usd: float
+    volume: int
+    open_interest: int
+    spot_price_at_trade: float
+    implied_volatility: Optional[float] = None
+    delta: Optional[float] = None
+    sentiment: FlowSentiment = FlowSentiment.NEUTRAL
+    is_sweep: bool = False
+    is_block: bool = False
+    exchange: str = ""
+    timestamp_utc: datetime
+    source: str = "unusual_whales"
+
+    model_config = {"from_attributes": True}
+
+
+class ScoutStatusAPI(BaseModel):
+    """Scout Agent WebSocket connection status."""
+    is_connected: bool = False
+    last_signal_at: Optional[datetime] = None
+    signals_today: int = 0
+    total_signals: int = 0
+    reconnect_count: int = 0
+    last_error: str = ""
 
     model_config = {"from_attributes": True}
 
